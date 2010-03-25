@@ -41,7 +41,12 @@ callHandler: (handler, request, response, args) ->
         request: request
         response: response
         respond: (json, code) -> response.writeJson(json, code)
-        error: (error, reason, code) -> response.writeJsonError(error, reason, code)
+        error: (error, reason, code) ->
+            if error instanceof Error
+                response.writeJsonError('unknown', error.message, 500, error.stack)
+                ERROR "$error.stack"
+            else
+                response.writeJsonError(error, reason, code)
     }
     if request.headers['content-type'] == 'application/x-www-form-urlencoded'
         body: []
@@ -109,7 +114,9 @@ http.ServerResponse.prototype.writeJson: (json, code, headers) ->
     @close()
 
 http.ServerResponse.prototype.writeJsonError: (error, reason, code, info) ->
-    @writeJson({ error: error, reason: reason }, code or 500)
+    message: { error: error, reason: reason }
+    if info? then message.info: info
+    @writeJson(message, code or 500)
 
 http.ServerResponse.prototype.writeError: (error) ->
     if error instanceof JsonError

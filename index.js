@@ -68,7 +68,12 @@
         return response.writeJson(json, code);
       },
       error: function error(error, reason, code) {
-        return response.writeJsonError(error, reason, code);
+        if (error instanceof Error) {
+          response.writeJsonError('unknown', error.message, 500, error.stack);
+          return ERROR("" + error.stack);
+        } else {
+          return response.writeJsonError(error, reason, code);
+        }
       }
     };
     if (request.headers['content-type'] === 'application/x-www-form-urlencoded') {
@@ -149,10 +154,13 @@
     return this.close();
   };
   http.ServerResponse.prototype.writeJsonError = function writeJsonError(error, reason, code, info) {
-    return this.writeJson({
+    var message;
+    message = {
       error: error,
       reason: reason
-    }, code || 500);
+    };
+    (typeof info !== "undefined" && info !== null) ? (message.info = info) : null;
+    return this.writeJson(message, code || 500);
   };
   http.ServerResponse.prototype.writeError = function writeError(error) {
     if (error instanceof JsonError) {
