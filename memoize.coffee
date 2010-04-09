@@ -1,7 +1,7 @@
 exports.memoize: (f) ->
     cache: {}
     queues: {}
-    (arg) ->
+    wrapper: (arg) ->
         (success, error) ->
             if arg in cache
                 [successful, args]: cache[arg]
@@ -19,4 +19,8 @@ exports.memoize: (f) ->
                     callbacks[1].apply(null, args) for callbacks in queues[arg]
                     delete queues[arg]
                 f(arg) succ, err
+
+    wrapper.flush: () ->
+        cache: {}
+    wrapper
 

@@ -1,9 +1,9 @@
 (function(){
   exports.memoize = function memoize(f) {
-    var cache, queues;
+    var cache, queues, wrapper;
     cache = {};
     queues = {};
-    return function(arg) {
+    wrapper = function wrapper(arg) {
       return function(success, error) {
         var _a, args, err, succ, successful;
         if (arg in cache) {
@@ -41,5 +41,10 @@
         }
       };
     };
+    wrapper.flush = function flush() {
+      cache = {};
+      return cache;
+    };
+    return wrapper;
   };
 })();
