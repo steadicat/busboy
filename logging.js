@@ -8,24 +8,24 @@
     ERROR: 3
   };
   LEVEL = LEVELS.DEBUG;
-  log = function log(level, s, data) {
+  log = function(level, s, data) {
     if ((typeof data !== "undefined" && data !== null)) {
       s += ' ' + sys.inspect(data);
     }
     if (LEVELS[level] >= LEVEL) {
-      return sys.log("[" + level + "] " + s);
+      return sys.log(("[" + level + "] " + s));
     }
   };
-  this.DEBUG = (this.debug = function debug(s, data) {
+  exports.DEBUG = (exports.debug = function(s, data) {
     return log('DEBUG', s, data);
   });
-  this.LOG = (this.log = (this.INFO = (this.info = function info(s, data) {
+  exports.LOG = (exports.log = (exports.INFO = (exports.info = function(s, data) {
     return log('INFO', s, data);
   })));
-  this.WARNING = (this.warning = function warning(s, data) {
+  exports.WARNING = (exports.warning = function(s, data) {
     return log('WARNING', s, data);
   });
-  this.ERROR = (this.error = function error(s, data) {
+  exports.ERROR = (exports.error = function(s, data) {
     return log('ERROR', s, data);
   });
 })();

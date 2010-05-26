@@ -7,7 +7,13 @@ client: require('./client')
 memoize: require('./memoize').memoize
 exports.logging: require('./logging')
 
-process.mixin(exports.logging)
+include: (glob, module) ->
+    for key, value of module
+        glob[key]: module[key]
+
+include(global, exports.logging)
+
+exports.include: include
 
 root: {}
 
@@ -111,7 +117,7 @@ http.ServerResponse.prototype.writeJson: (json, code, headers) ->
     headers['Content-Type'] ||= 'application/json'
     @writeHead code or 200, headers
     @write JSON.stringify json
-    @close()
+    @end()
 
 http.ServerResponse.prototype.writeJsonError: (error, reason, code, info) ->
     message: { error: error, reason: reason }

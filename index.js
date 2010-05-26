@@ -1,6 +1,10 @@
 (function(){
-  var Do, JsonError, MethodNotAllowed, NotFound, addInnerHandler, callHandler, client, createHandler, handleRequest, http, memoize, querystring, root, server, sys;
-  var __extends = function(child, parent) {
+  var Do, JsonError, MethodNotAllowed, NotFound, addInnerHandler, callHandler, client, createHandler, handleRequest, http, include, memoize, querystring, root, server, sys;
+  var __hasProp = Object.prototype.hasOwnProperty, __slice = Array.prototype.slice, __bind = function(func, obj, args) {
+    return function() {
+      return func.apply(obj || {}, args ? args.concat(__slice.call(arguments, 0)) : arguments);
+    };
+  }, __extends = function(child, parent) {
     var ctor = function(){ };
     ctor.prototype = parent.prototype;
     child.__superClass__ = parent.prototype;
@@ -14,63 +18,57 @@
   client = require('./client');
   memoize = require('./memoize').memoize;
   exports.logging = require('./logging');
-  process.mixin(exports.logging);
+  include = function(glob, module) {
+    var _a, _b, key, value;
+    _a = []; _b = module;
+    for (key in _b) { if (__hasProp.call(_b, key)) {
+      value = _b[key];
+      _a.push((glob[key] = module[key]));
+    }}
+    return _a;
+  };
+  include(global, exports.logging);
+  exports.include = include;
   root = {};
-  addInnerHandler = function addInnerHandler(root, method, path, handler) {
+  addInnerHandler = function(root, method, path, handler) {
     if (path.length) {
       path[0] === '*' ? (path[0] = '_') : null;
       root[path[0]] = root[path[0]] || {};
       return addInnerHandler(root[path[0]], method, path.slice(1), handler);
     } else {
       if (root[method]) {
-        WARNING("Handler for " + method + " " + (path.join('/')) + " overriden.");
+        WARNING(("Handler for " + method + " " + (path.join('/')) + " overriden."));
       }
       root[method] = handler;
       return root[method];
     }
   };
-  createHandler = function createHandler(method, url, handler) {
+  createHandler = function(method, url, handler) {
     return addInnerHandler(root, method, url.split('/').slice(1), handler);
   };
   exports.methods = {
-    GET: (function(func, obj, args) {
-      return function() {
-        return func.apply(obj, args.concat(Array.prototype.slice.call(arguments, 0)));
-      };
-    }(createHandler, null, ['GET'])),
-    POST: (function(func, obj, args) {
-      return function() {
-        return func.apply(obj, args.concat(Array.prototype.slice.call(arguments, 0)));
-      };
-    }(createHandler, null, ['POST'])),
-    PUT: (function(func, obj, args) {
-      return function() {
-        return func.apply(obj, args.concat(Array.prototype.slice.call(arguments, 0)));
-      };
-    }(createHandler, null, ['PUT'])),
-    DELETE: (function(func, obj, args) {
-      return function() {
-        return func.apply(obj, args.concat(Array.prototype.slice.call(arguments, 0)));
-      };
-    }(createHandler, null, ['DELETE']))
+    GET: __bind(createHandler, null, ['GET']),
+    POST: __bind(createHandler, null, ['POST']),
+    PUT: __bind(createHandler, null, ['PUT']),
+    DELETE: __bind(createHandler, null, ['DELETE'])
   };
   exports.utils = {
     Do: Do,
     client: client,
     memoize: memoize
   };
-  callHandler = function callHandler(handler, request, response, args) {
+  callHandler = function(handler, request, response, args) {
     var body, context;
     context = {
       request: request,
       response: response,
-      respond: function respond(json, code) {
+      respond: function(json, code) {
         return response.writeJson(json, code);
       },
-      error: function error(error, reason, code) {
+      error: function(error, reason, code) {
         if (error instanceof Error) {
           response.writeJsonError('unknown', error.message, 500, error.stack);
-          return ERROR("" + error.stack);
+          return ERROR(("" + error.stack));
         } else {
           return response.writeJsonError(error, reason, code);
         }
@@ -89,7 +87,7 @@
       return handler.apply(context, args);
     }
   };
-  JsonError = function JsonError(error, reason, code) {
+  JsonError = function(error, reason, code) {
     this.error = error;
     this.reason = reason;
     this.code = code || 500;
@@ -97,40 +95,45 @@
     return this;
   };
   __extends(JsonError, Error);
-  NotFound = function NotFound() {
+
+  NotFound = function() {
     NotFound.__superClass__.constructor.call(this, 'not_found', 'Nothing found here.', 404);
     return this;
   };
   __extends(NotFound, JsonError);
-  MethodNotAllowed = function MethodNotAllowed() {
+
+  MethodNotAllowed = function() {
     MethodNotAllowed.__superClass__.constructor.call(this, 'method_not_allowed', 'Method not allowed.', 405);
     return this;
   };
   __extends(MethodNotAllowed, JsonError);
-  handleRequest = function handleRequest(root, path, args, request, response) {
+
+  handleRequest = function(root, path, args, request, response) {
     if (path.length) {
       if (root[path[0]]) {
-        DEBUG("Found path " + (path[0]));
+        DEBUG(("Found path " + (path[0])));
         return handleRequest(root[path[0]], path.slice(1), args, request, response);
       } else if (root['_']) {
-        DEBUG("Found wildcard for " + (path[0]));
+        DEBUG(("Found wildcard for " + (path[0])));
         args.push(path[0]);
         return handleRequest(root._, path.slice(1), args, request, response);
       } else {
-        WARNING("Path " + path + " not found");
+        WARNING(("Path " + path + " not found"));
         throw new NotFound();
       }
-    } else if (root[request.method]) {
-      DEBUG("Calling method " + request.method);
-      return callHandler(root[request.method], request, response, args);
     } else {
-      DEBUG("Method handler not found");
-      throw new MethodNotAllowed();
+      if (root[request.method]) {
+        DEBUG(("Calling method " + request.method));
+        return callHandler(root[request.method], request, response, args);
+      } else {
+        DEBUG("Method handler not found");
+        throw new MethodNotAllowed();
+      }
     }
   };
-  server = function server(request, response) {
+  server = function(request, response) {
     var path;
-    INFO("" + request.method + " " + request.url);
+    INFO(("" + request.method + " " + request.url));
     path = request.url.split('/').slice(1);
     try {
       return handleRequest(root, path, [], request, response);
@@ -138,22 +141,22 @@
       return response.writeError(e);
     }
   };
-  exports.start = function start(port) {
+  exports.start = function(port) {
     port = port || 8888;
-    INFO("Started Busboy on port " + port + ".");
+    INFO(("Started Busboy on port " + port + "."));
     return http.createServer(server).listen(port);
   };
   process.addListener('uncaughtException', function(exception) {
-    return ERROR("" + exception.stack);
+    return ERROR(("" + exception.stack));
   });
-  http.ServerResponse.prototype.writeJson = function writeJson(json, code, headers) {
+  http.ServerResponse.prototype.writeJson = function(json, code, headers) {
     headers = headers || {};
     headers['Content-Type'] = headers['Content-Type'] || 'application/json';
     this.writeHead(code || 200, headers);
     this.write(JSON.stringify(json));
-    return this.close();
+    return this.end();
   };
-  http.ServerResponse.prototype.writeJsonError = function writeJsonError(error, reason, code, info) {
+  http.ServerResponse.prototype.writeJsonError = function(error, reason, code, info) {
     var message;
     message = {
       error: error,
@@ -162,12 +165,12 @@
     (typeof info !== "undefined" && info !== null) ? (message.info = info) : null;
     return this.writeJson(message, code || 500);
   };
-  http.ServerResponse.prototype.writeError = function writeError(error) {
+  http.ServerResponse.prototype.writeError = function(error) {
     if (error instanceof JsonError) {
       return this.writeJsonError(error.error, error.reason, error.code);
     } else {
       this.writeJsonError('unknown', error.message, 500, error.stack);
-      return ERROR("" + error.stack);
+      return ERROR(("" + error.stack));
     }
   };
 })();

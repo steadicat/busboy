@@ -13,7 +13,7 @@ log: (level, s, data) ->
     s += ' ' + sys.inspect(data) if data?
     sys.log("[$level] $s") if LEVELS[level] >= LEVEL
 
-this.DEBUG: this.debug: (s, data) -> log('DEBUG', s, data)
-this.LOG: this.log: this.INFO: this.info: (s, data) -> log('INFO', s, data)
-this.WARNING: this.warning: (s, data) -> log('WARNING', s, data)
-this.ERROR: this.error: (s, data) -> log('ERROR', s, data)
+exports.DEBUG: exports.debug: (s, data) -> log('DEBUG', s, data)
+exports.LOG: exports.log: exports.INFO: exports.info: (s, data) -> log('INFO', s, data)
+exports.WARNING: exports.warning: (s, data) -> log('WARNING', s, data)
+exports.ERROR: exports.error: (s, data) -> log('ERROR', s, data)
