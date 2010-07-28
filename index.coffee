@@ -30,10 +30,10 @@ createHandler: (method, url, handler) ->
     addInnerHandler(root, method, url.split('/').slice(1), handler)
 
 exports.methods: {
-    GET: createHandler <- null, 'GET'
-    POST: createHandler <- null, 'POST'
-    PUT: createHandler <- null, 'PUT'
-    DELETE: createHandler <- null, 'DELETE'
+    GET: (args...) -> createHandler 'GET', args...
+    POST: (args...) -> createHandler 'POST', args...
+    PUT: (args...) -> createHandler 'PUT', args...
+    DELETE: (args...) -> createHandler 'DELETE', args...
 }
 
 exports.utils: {
@@ -62,6 +62,7 @@ callHandler: (handler, request, response, args) ->
             args.push querystring.parse body.join ''
             handler.apply(context, args)
     else
+        args.push {}
         handler.apply(context, args)
 
 class JsonError extends Error

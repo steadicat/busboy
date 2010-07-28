@@ -1,10 +1,6 @@
 (function(){
   var Do, JsonError, MethodNotAllowed, NotFound, addInnerHandler, callHandler, client, createHandler, handleRequest, http, include, memoize, querystring, root, server, sys;
-  var __hasProp = Object.prototype.hasOwnProperty, __slice = Array.prototype.slice, __bind = function(func, obj, args) {
-    return function() {
-      return func.apply(obj || {}, args ? args.concat(__slice.call(arguments, 0)) : arguments);
-    };
-  }, __extends = function(child, parent) {
+  var __hasProp = Object.prototype.hasOwnProperty, __slice = Array.prototype.slice, __extends = function(child, parent) {
     var ctor = function(){ };
     ctor.prototype = parent.prototype;
     child.__superClass__ = parent.prototype;
@@ -23,7 +19,7 @@
     _a = []; _b = module;
     for (key in _b) { if (__hasProp.call(_b, key)) {
       value = _b[key];
-      _a.push((glob[key] = module[key]));
+      _a.push(glob[key] = module[key]);
     }}
     return _a;
   };
@@ -47,10 +43,30 @@
     return addInnerHandler(root, method, url.split('/').slice(1), handler);
   };
   exports.methods = {
-    GET: __bind(createHandler, null, ['GET']),
-    POST: __bind(createHandler, null, ['POST']),
-    PUT: __bind(createHandler, null, ['PUT']),
-    DELETE: __bind(createHandler, null, ['DELETE'])
+    GET: function() {
+      var args;
+      var _a = arguments.length, _b = _a >= 1;
+      args = __slice.call(arguments, 0, _a - 0);
+      return createHandler.apply(this, ['GET'].concat(args));
+    },
+    POST: function() {
+      var args;
+      var _a = arguments.length, _b = _a >= 1;
+      args = __slice.call(arguments, 0, _a - 0);
+      return createHandler.apply(this, ['POST'].concat(args));
+    },
+    PUT: function() {
+      var args;
+      var _a = arguments.length, _b = _a >= 1;
+      args = __slice.call(arguments, 0, _a - 0);
+      return createHandler.apply(this, ['PUT'].concat(args));
+    },
+    DELETE: function() {
+      var args;
+      var _a = arguments.length, _b = _a >= 1;
+      args = __slice.call(arguments, 0, _a - 0);
+      return createHandler.apply(this, ['DELETE'].concat(args));
+    }
   };
   exports.utils = {
     Do: Do,
@@ -68,7 +84,7 @@
       error: function(error, reason, code) {
         if (error instanceof Error) {
           response.writeJsonError('unknown', error.message, 500, error.stack);
-          return ERROR(("" + error.stack));
+          return ERROR("" + error.stack);
         } else {
           return response.writeJsonError(error, reason, code);
         }
@@ -84,6 +100,7 @@
         return handler.apply(context, args);
       });
     } else {
+      args.push({});
       return handler.apply(context, args);
     }
   };
@@ -118,12 +135,12 @@
         args.push(path[0]);
         return handleRequest(root._, path.slice(1), args, request, response);
       } else {
-        WARNING(("Path " + path + " not found"));
+        WARNING("Path " + path + " not found");
         throw new NotFound();
       }
     } else {
       if (root[request.method]) {
-        DEBUG(("Calling method " + request.method));
+        DEBUG("Calling method " + request.method);
         return callHandler(root[request.method], request, response, args);
       } else {
         DEBUG("Method handler not found");
@@ -133,7 +150,7 @@
   };
   server = function(request, response) {
     var path;
-    INFO(("" + request.method + " " + request.url));
+    INFO("" + request.method + " " + request.url);
     path = request.url.split('/').slice(1);
     try {
       return handleRequest(root, path, [], request, response);
@@ -143,11 +160,11 @@
   };
   exports.start = function(port) {
     port = port || 8888;
-    INFO(("Started Busboy on port " + port + "."));
+    INFO("Started Busboy on port " + port + ".");
     return http.createServer(server).listen(port);
   };
   process.addListener('uncaughtException', function(exception) {
-    return ERROR(("" + exception.stack));
+    return ERROR("" + exception.stack);
   });
   http.ServerResponse.prototype.writeJson = function(json, code, headers) {
     headers = headers || {};
@@ -170,7 +187,7 @@
       return this.writeJsonError(error.error, error.reason, error.code);
     } else {
       this.writeJsonError('unknown', error.message, 500, error.stack);
-      return ERROR(("" + error.stack));
+      return ERROR("" + error.stack);
     }
   };
 })();
