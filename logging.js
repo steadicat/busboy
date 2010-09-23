@@ -1,4 +1,4 @@
-(function(){
+(function() {
   var LEVEL, LEVELS, log, sys;
   sys = require('sys');
   LEVELS = {
@@ -9,11 +9,11 @@
   };
   LEVEL = LEVELS.DEBUG;
   log = function(level, s, data) {
-    if ((typeof data !== "undefined" && data !== null)) {
-      s += ' ' + sys.inspect(data);
+    if (typeof data !== "undefined" && data !== null) {
+      s += ' ' + JSON.stringify(data);
     }
     if (LEVELS[level] >= LEVEL) {
-      return sys.log(("[" + level + "] " + s));
+      return sys.log("[" + (level) + "] " + (s));
     }
   };
   exports.DEBUG = (exports.debug = function(s, data) {

@@ -1,65 +1,3 @@
-// From jQuery.extend in the jQuery JavaScript Library v1.3.2
-// Copyright (c) 2009 John Resig
-// Dual licensed under the MIT and GPL licenses.
-// http://docs.jquery.com/License
-// Modified for node.js (formely for copying properties correctly)
-process.mixin = function() {
-  // copy reference to target object
-  var target = arguments[0] || {}, i = 1, length = arguments.length, deep = false, source;
-
-  // Handle a deep copy situation
-  if ( typeof target === "boolean" ) {
-    deep = target;
-    target = arguments[1] || {};
-    // skip the boolean and the target
-    i = 2;
-  }
-
-  // Handle case when target is a string or something (possible in deep copy)
-  if ( typeof target !== "object" && !(typeof target === 'function') )
-    target = {};
-
-  // mixin process itself if only one argument is passed
-  if ( length == i ) {
-    target = GLOBAL;
-    --i;
-  }
-
-  for ( ; i < length; i++ ) {
-    // Only deal with non-null/undefined values
-    if ( (source = arguments[i]) != null ) {
-      // Extend the base object
-      Object.getOwnPropertyNames(source).forEach(function(k){
-        var d = Object.getOwnPropertyDescriptor(source, k);
-        if (d.get) {
-          target.__defineGetter__(k, d.get);
-          if (d.set) {
-            target.__defineSetter__(k, d.set);
-          }
-        }
-        else {
-          // Prevent never-ending loop
-          if (target === d.value) {
-            continue;
-          }
-
-          if (deep && d.value && typeof d.value === "object") {
-            target[k] = process.mixin(deep,
-              // Never move original objects, clone them
-              source[k] || (d.value.length != null ? [] : {})
-            , d.value);
-          }
-          else {
-            target[k] = d.value;
-          }
-        }
-      });
-    }
-  }
-  // Return the modified object
-  return target;
-};
-
 var sys       = require('sys'),
     http      = require('http'),
     uri       = require('./vendor/uri'),
@@ -72,11 +10,15 @@ var sys       = require('sys'),
 function Request(url, options) {
   this.url = uri.parse(url);
   this.options = options;
-  this.headers = process.mixin({
+  this.headers = {
     'Accept': '*/*',
     'Host': this.url.domain,
     'User-Agent': 'Restler for node.js'
-  }, options.headers || {});
+  }
+  var _this = this
+  Object.keys(options.headers || {}).forEach(function(headerKey) {
+    _this.headers[headerKey] = options.headers[headerKey]
+  })
   
   if (!this.url.path) this.url.path = '/'
   
@@ -103,7 +45,7 @@ function Request(url, options) {
 }
 
 Request.prototype = new process.EventEmitter();
-process.mixin(Request.prototype, {
+var requestMethods = {
   _isRedirect: function(response) {
     return ([301, 302].indexOf(response.statusCode) >= 0);
   },
@@ -204,15 +146,18 @@ process.mixin(Request.prototype, {
   run: function() {
     var self = this;
     if (this.options.multipart) {
-      multipart.send(this.request, this.options.data, function() {
-        self.request.close();
+      multipart.write(this.request, this.options.data, function() {
+        self.request.end();
       });
     } else {
-		this.request.close();
+		this.request.end();
     }
     return this;
   }
-}); 
+}
+Object.keys(requestMethods).forEach(function(requestMethod) {
+  Request.prototype[requestMethod] = requestMethods[requestMethod]
+})
 
 function shortcutOptions(options, method) {
   options = options || {};
@@ -278,7 +223,7 @@ function Service(defaults) {
   this.defaults = defaults;
 }
 
-process.mixin(Service.prototype, {
+var serviceMethods = {
   request: function(path, options) {
     return request(this._url(path), this._withDefaults(options));
   },
@@ -299,20 +244,31 @@ process.mixin(Service.prototype, {
     else return path;
   },
   _withDefaults: function(options) {
-    var o = {};
-    process.mixin(o, this.defaults);
-    process.mixin(true, o, options);
+    var o = {}; 
+    var defaults = this.defaults
+    Object.keys(defaults).forEach(function(_default) {
+      o[_default] = defaults[_default]
+    })
+    Object.keys(options).forEach(function(option) {
+      o[option] = options[option]
+    })
+    
     return o;
   }
-});
+}
+Object.keys(serviceMethods).forEach(function(serviceMethod) {
+  Service.prototype[serviceMethod] = serviceMethods[serviceMethod]
+})
 
 function service(constructor, defaults, methods) {
   constructor.prototype = new Service(defaults || {});
-  process.mixin(constructor.prototype, methods || {});
+  Object.keys(methods || {}).forEach(function(method) {
+    constructor.prototype[method] = methods[method]
+  })
   return constructor;
 }
 
-process.mixin(exports, {
+var _exports = {
   Request: Request,
   Service: Service,
   request: request,
@@ -324,4 +280,8 @@ process.mixin(exports, {
   parsers: parsers,
   file: multipart.file,
   data: multipart.data
-});
+}
+
+Object.keys(_exports).forEach(function(_export) {
+  exports[_export] = _exports[_export]
+})

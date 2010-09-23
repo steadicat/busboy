@@ -20,11 +20,11 @@ GET '/headers', (id) ->
 
 process.mixin(busboy.utils) # memoize, client...
 
-getCloudantMember: memoize (id) ->
-    client.get("http://cloudant.cloudant.com/team/$id")
+getCloudantMember = memoize (id) ->
+    client.get("http://cloudant.cloudant.com/team/#{id}")
 
 GET '/cloudant_member/*', (id) ->
-    success: (data) => @respond data
+    success = (data) => @respond data
     getCloudantMember(id) success, @error
 
 busboy.start(8888)
